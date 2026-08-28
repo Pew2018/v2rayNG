@@ -29,6 +29,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
@@ -40,14 +41,12 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,8 +54,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,21 +77,19 @@ fun ExpressiveMainScreen(
     val selectedGroupId = uiState.selectedGroupId
     val selectedGuid = uiState.selectedGuid
     val isRunning = uiState.isRunning
-    val dark = LocalDarkTheme.current
+    LocalDarkTheme.current
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val snackbarHostState = remember { SnackbarHostState() }
     var searchOpen by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val servers by mainViewModel.serversForGroup(selectedGroupId).collectAsStateWithLifecycle()
 
     LaunchedEffect(groups, selectedGroupId) {
         val index = groups.indexOfFirst { it.id == selectedGroupId }
         if (index >= 0) selectedTab = index
     }
-
-    val serversFlow = selectedGroupId.takeIf { it.isNotBlank() }?.let { mainViewModel.serversForGroup(it) }
-    val servers by (serversFlow?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyList()) })
 
     fun selectGroup(index: Int) {
         val group = groups.getOrNull(index) ?: return
@@ -104,22 +101,18 @@ fun ExpressiveMainScreen(
         drawerState = drawerState,
         drawerContent = {
             Column(
-                Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(12.dp)
+                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(12.dp)
             ) {
                 Spacer(Modifier.height(24.dp))
                 Text(
-                    text = "v2rayNG",
+                    text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(20.dp, 12.dp)
                 )
                 Spacer(Modifier.height(8.dp))
                 MainDestination.entries.forEach { destination ->
                     NavigationDrawerItem(
-                        label = { Text(destination.name) },
+                        label = { Text(stringResource(destination.labelRes)) },
                         selected = false,
                         onClick = {
                             scope.launch { drawerState.close() }
@@ -152,7 +145,11 @@ fun ExpressiveMainScreen(
                         },
                         placeholder = { Text("Search servers") },
                         leadingIcon = {
-                            IconButton(onClick = { searchOpen = false }) {
+                            IconButton(onClick = {
+                                searchOpen = false
+                                searchQuery = ""
+                                onAction(MainAction.Search(""))
+                            }) {
                                 Icon(painterResource(R.drawable.ic_arrow_back_24dp), contentDescription = "Back")
                             }
                         },
@@ -162,18 +159,9 @@ fun ExpressiveMainScreen(
                     LargeTopAppBar(
                         title = {
                             Column {
-                                Text(
-                                    text = "Servers",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
+                                Text(stringResource(R.string.title_server), style = MaterialTheme.typography.headlineSmall)
                                 AnimatedVisibility(visible = isLoading) {
-                                    Text(
-                                        text = "Updating…",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
+                                    Text("Updating…", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         },
@@ -186,25 +174,21 @@ fun ExpressiveMainScreen(
                             IconButton(onClick = { searchOpen = true }) {
                                 Icon(painterResource(R.drawable.ic_search_24dp), contentDescription = "Search")
                             }
-                            IconButton(onClick = { onAction(MainAction.ImportManually(0)) }) {
-                                Icon(painterResource(R.drawable.ic_add_24dp), contentDescription = "Add")
+                            IconButton(onClick = { onAction(MainAction.ImportClipboard) }) {
+                                Icon(painterResource(R.drawable.ic_add_24dp), contentDescription = "Import")
                             }
                             IconButton(onClick = { onAction(MainAction.UpdateSubscriptions) }) {
                                 Icon(painterResource(R.drawable.ic_refresh_24dp), contentDescription = "Refresh")
                             }
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.background,
-                        )
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
                     )
                 }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = {
-                        if (isRunning) onAction(MainAction.ToggleService) else onAction(MainAction.ToggleService)
-                    },
+                    onClick = { onAction(MainAction.ToggleService) },
                     shape = MaterialTheme.shapes.extraLarge,
                     containerColor = if (isRunning) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
                     contentColor = if (isRunning) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary,
@@ -217,11 +201,7 @@ fun ExpressiveMainScreen(
                 }
             }
         ) { innerPadding ->
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
+            Column(Modifier.fillMaxSize().padding(innerPadding)) {
                 if (groups.size > 1) {
                     TabRow(
                         selectedTabIndex = selectedTab.coerceIn(0, groups.lastIndex),
@@ -240,18 +220,10 @@ fun ExpressiveMainScreen(
 
                 ElevatedCard(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.elevatedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(18.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+                    Row(Modifier.padding(18.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(
                                 text = if (isRunning) "Connected" else "Disconnected",
@@ -265,9 +237,7 @@ fun ExpressiveMainScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        FilledTonalButton(onClick = { onAction(MainAction.TestCurrentServer) }) {
-                            Text("Test")
-                        }
+                        FilledTonalButton(onClick = { onAction(MainAction.TestCurrentServer) }) { Text("Test") }
                     }
                 }
 
@@ -283,7 +253,6 @@ fun ExpressiveMainScreen(
                             ExpressiveServerCard(
                                 server = server,
                                 selected = server.guid == selectedGuid,
-                                dark = dark,
                                 onClick = { onAction(MainAction.SelectServer(server.guid)) },
                                 onEdit = { onAction(MainAction.EditServer(server.guid, server.profile)) },
                                 onShare = { onAction(MainAction.ShareQRCode(server.guid)) },
@@ -299,27 +268,12 @@ fun ExpressiveMainScreen(
 
 @Composable
 private fun ExpressiveEmptyState(onImport: () -> Unit) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        ElevatedCard(
-            shape = MaterialTheme.shapes.extraLarge,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(28.dp),
-            ) {
+    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+        ElevatedCard(shape = MaterialTheme.shapes.extraLarge, modifier = Modifier.fillMaxWidth()) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(28.dp)) {
                 Text("No servers", style = MaterialTheme.typography.headlineSmall)
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    "Import a server or subscription to get started.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text("Import a server or subscription to get started.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(18.dp))
                 FilledTonalButton(onClick = onImport) { Text("Import from clipboard") }
             }
@@ -331,7 +285,6 @@ private fun ExpressiveEmptyState(onImport: () -> Unit) {
 private fun ExpressiveServerCard(
     server: ServersCache,
     selected: Boolean,
-    dark: Boolean,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onShare: () -> Unit,
@@ -345,64 +298,36 @@ private fun ExpressiveServerCard(
     val secondary = if (selected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f) else MaterialTheme.colorScheme.onSurfaceVariant
 
     ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.elevatedCardColors(containerColor = container),
     ) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = if (selected) 0.22f else 0.12f)),
+                Modifier.size(46.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = if (selected) 0.22f else 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = server.profile.remarks.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Text(server.profile.remarks.take(1).uppercase(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(
-                    server.profile.remarks,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = onContainer,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Text(server.profile.remarks, style = MaterialTheme.typography.titleMedium, color = onContainer, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
-                Text(
-                    server.profile.description.ifBlank { server.profile.configType.name },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = secondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Text(server.profile.description.ifBlank { server.profile.configType.name }, style = MaterialTheme.typography.bodyMedium, color = secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(7.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(server.profile.configType.name, style = MaterialTheme.typography.labelMedium, color = secondary)
                     Spacer(Modifier.width(10.dp))
                     val ping = server.testDelayMillis
-                    if (ping >= 0L) {
-                        Text("${ping} ms", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    } else if (ping < 0L) {
-                        Text("Unavailable", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
+                    when {
+                        ping >= 0L -> Text("${ping} ms", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        ping < 0L -> Text("Unavailable", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
-            IconButton(onClick = onEdit) {
-                Icon(painterResource(R.drawable.ic_edit_24dp), contentDescription = "Edit")
-            }
-            IconButton(onClick = onShare) {
-                Icon(painterResource(R.drawable.ic_share_24dp), contentDescription = "Share")
-            }
-            IconButton(onClick = onDelete) {
-                Icon(painterResource(R.drawable.ic_delete_24dp), contentDescription = "Delete")
-            }
+            IconButton(onClick = onEdit) { Icon(painterResource(R.drawable.ic_edit_24dp), contentDescription = "Edit") }
+            IconButton(onClick = onShare) { Icon(painterResource(R.drawable.ic_share_24dp), contentDescription = "Share") }
+            IconButton(onClick = onDelete) { Icon(painterResource(R.drawable.ic_delete_24dp), contentDescription = "Delete") }
         }
     }
 }
