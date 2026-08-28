@@ -2,29 +2,31 @@
 set -o errexit
 set -o pipefail
 set -o nounset
-# Set magic variables for current file & dir
+
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 __file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
 __base="$(basename ${__file} .sh)"
+
 if [[ ! -d $NDK_HOME ]]; then
   echo "Android NDK: NDK_HOME not found. please set env \$NDK_HOME"
   exit 1
 fi
+
 TMPDIR=$(mktemp -d)
 clear_tmp () {
-  rm -rf $TMPDIR
+  rm -rf "$TMPDIR"
 }
 trap 'echo -e "Aborted, error $? in command: $BASH_COMMAND"; trap ERR; clear_tmp; exit 1' ERR INT
 
-ABIS="armeabi-v7a arm64-v8a x86 x86_64"
+# ABI_FILTERS can be set by CI to build only the architectures that will be packaged.
+# Keep the original multi-ABI behavior when the variable is not provided.
+ABIS="${ABI_FILTERS:-armeabi-v7a arm64-v8a x86 x86_64}"
 
 mkdir -p "$TMPDIR/jni"
 pushd "$TMPDIR"
 
 ln -s "$__dir/hev-socks5-tunnel" jni/hev-socks5-tunnel
 
-# 1) JNI shared library (libhev-socks5-tunnel.so) — loaded in-process by
-#    com.v2ray.ang.service.TProxyService for the VpnService hev tun mode.
 echo 'include $(call all-subdir-makefiles)' > jni/Android.mk
 
 "$NDK_HOME/ndk-build" \
@@ -35,12 +37,8 @@ echo 'include $(call all-subdir-makefiles)' > jni/Android.mk
     NDK_LIBS_OUT="$TMPDIR/libs" \
     NDK_OUT="$TMPDIR/obj" \
     "APP_CFLAGS=-O3 -DPKGNAME=com/v2ray/ang/service" \
-    "APP_LDFLAGS=-Wl,--build-id=none -Wl,--hash-style=gnu" \
+    "APP_LDFLAGS=-Wl,--build-id=none -Wl,--hash-style=gnu"
 
-# 2) Standalone executable (libhevsockstun.so) — run as a separate root
-#    process by com.v2ray.ang.core.root for the Root run mode. Same hev source,
-#    no -DENABLE_LIBRARY so hev-main.c's main() is built, and BUILD_EXECUTABLE
-#    instead of a shared library. It creates its own tun and reads a YAML config.
 cat > jni/exec.mk <<'EXECMK'
 TOP_PATH := $(call my-dir)/hev-socks5-tunnel
 
@@ -88,11 +86,8 @@ EXECMK
     NDK_LIBS_OUT="$TMPDIR/libs-exec" \
     NDK_OUT="$TMPDIR/obj-exec" \
     "APP_CFLAGS=-O3" \
-    "APP_LDFLAGS=-Wl,--build-id=none -Wl,--hash-style=gnu" \
+    "APP_LDFLAGS=-Wl,--build-id=none -Wl,--hash-style=gnu"
 
-# Stage both artifacts under libs/<abi>/. The executable is renamed to
-# lib*.so so the APK installer extracts it into nativeLibraryDir as an
-# executable file (filename distinct from the JNI library above).
 mkdir -p "$__dir/libs"
 cp -r "$TMPDIR/libs/"* "$__dir/libs/"
 for abi in $ABIS; do
@@ -100,4 +95,4 @@ for abi in $ABIS; do
 done
 
 popd
-rm -rf $TMPDIR
+rm -rf "$TMPDIR"
