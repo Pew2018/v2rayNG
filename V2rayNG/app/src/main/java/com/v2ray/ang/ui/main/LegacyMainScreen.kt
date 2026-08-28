@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.main
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -11,19 +12,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.ui.compose.LocalDarkTheme
 
 @Composable
-fun LegacyMainScreen(
-    mainViewModel: MainViewModel,
-    onAction: (MainAction) -> Unit,
-    onNavigate: (MainDestination) -> Unit,
-) {
+fun LegacyMainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onNavigate: (MainDestination) -> Unit) {
     val state by mainViewModel.uiState.collectAsStateWithLifecycle()
     val servers by mainViewModel.serversForGroup(state.selectedGroupId).collectAsStateWithLifecycle()
     val dark = LocalDarkTheme.current
     val context = LocalContext.current
     BackHandler { (context as? Activity)?.moveTaskToBack(false) }
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { LegacyMainView(it, onAction, onNavigate) },
-        update = { it.render(state, servers, dark) }
-    )
+    AndroidView(Modifier.fillMaxSize(), factory = { LegacyMainView(it, onAction, onNavigate) }, update = { it.render(state, servers, dark) })
 }
