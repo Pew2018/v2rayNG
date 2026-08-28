@@ -3,8 +3,11 @@ package com.v2ray.ang.ui.main
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,19 +64,13 @@ private val drawerItems = primaryDrawerItems + listOf(
     MainDestination.About
 )
 
-/**
- * Legacy drawer intentionally uses a flat Android-8-era layout instead of M3 NavigationDrawerItem.
- * It avoids the expensive image/filter/scrollbar work that previously made drawer opening feel delayed.
- */
 @Composable
 fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) -> Unit) {
     val isDarkTheme = LocalDarkTheme.current
     val scrollState = rememberScrollState()
     val background = if (isDarkTheme) Color(0xFF303030) else Color.White
     val primaryText = if (isDarkTheme) Color.White else Color(0xFF212121)
-    val secondaryText = if (isDarkTheme) Color(0xFFBDBDBD) else Color(0xFF757575)
     val iconColor = if (isDarkTheme) Color(0xFFBDBDBD) else Color(0xFF616161)
-    val pressedBg = if (isDarkTheme) Color(0xFF424242) else Color(0xFFF0F0F0)
 
     ModalDrawerSheet(
         drawerState = drawerState,
@@ -102,30 +99,18 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.Start,
                 ) {
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = Color.White,
-                    )
-                    Text(
-                        stringResource(R.string.title_server),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFBDBDBD),
-                    )
+                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall, color = Color.White)
+                    Text(stringResource(R.string.title_server), style = MaterialTheme.typography.bodyMedium, color = Color(0xFFBDBDBD))
                 }
             }
 
             drawerItems.forEachIndexed { index, item ->
-                if (index == primaryDrawerItems.size) {
-                    AppDivider()
-                }
+                if (index == primaryDrawerItems.size) AppDivider()
                 LegacyDrawerItem(
                     iconRes = item.iconRes,
                     labelRes = item.labelRes,
                     primaryText = primaryText,
                     iconColor = iconColor,
-                    pressedBackground = pressedBg,
-                    secondaryText = secondaryText,
                     onClick = { onNavigate(item) },
                 )
             }
@@ -139,43 +124,24 @@ private fun LegacyDrawerItem(
     @StringRes labelRes: Int,
     primaryText: Color,
     iconColor: Color,
-    pressedBackground: Color,
-    secondaryText: Color,
     onClick: () -> Unit,
 ) {
-    androidx.compose.foundation.layout.Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .background(Color.Transparent)
             .padding(horizontal = 12.dp)
-            .then(Modifier),
-        verticalAlignment = Alignment.CenterVertically,
+            .clickable(onClick = onClick),
+        color = Color.Transparent,
+        shape = RectangleShape,
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(onClick = onClick),
-            color = Color.Transparent,
-            shape = RectangleShape,
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            androidx.compose.foundation.layout.Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = painterResource(iconRes),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp).padding(0.dp),
-                    tint = iconColor,
-                )
-                androidx.compose.foundation.layout.Spacer(Modifier.size(28.dp))
-                Text(
-                    text = stringResource(labelRes),
-                    color = primaryText,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }
+            Icon(painterResource(iconRes), contentDescription = null, modifier = Modifier.size(24.dp), tint = iconColor)
+            Spacer(Modifier.size(28.dp))
+            Text(stringResource(labelRes), color = primaryText, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
