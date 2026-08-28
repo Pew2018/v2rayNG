@@ -74,13 +74,12 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
     val squareShape = RoundedCornerShape(0.dp)
 
     ModalDrawerSheet(
-        drawerState = drawerState,
+        drawerState,
         modifier = Modifier.fillMaxWidth(0.78f),
         drawerShape = squareShape,
         drawerContainerColor = background,
         drawerContentColor = primaryText,
         drawerTonalElevation = 0.dp,
-        drawerShadowElevation = 12.dp,
     ) {
         Column(
             modifier = Modifier
