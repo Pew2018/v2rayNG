@@ -40,10 +40,10 @@ class LegacyMainView(context: Context, private val onAction: (MainAction) -> Uni
     private val adapter = LegacyServerAdapter(context, onAction)
     private val drawer = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
     private val fab = AppCompatImageButton(context).apply {
-        scaleType = ImageButton.ScaleType.CENTER; setPadding(dp(16), dp(16), dp(16), dp(16)); setColorFilter(Color.WHITE); elevation = dp(6).toFloat()
+        scaleType = android.widget.ImageView.ScaleType.CENTER
+        setPadding(dp(16), dp(16), dp(16), dp(16)); setColorFilter(Color.WHITE); elevation = dp(6).toFloat()
         background = GradientDrawable().apply { shape = GradientDrawable.OVAL }
     }
-
     init {
         setScrimColor(0x99000000.toInt())
         val main = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(LIGHT_BG) }
@@ -66,7 +66,6 @@ class LegacyMainView(context: Context, private val onAction: (MainAction) -> Uni
         fab.setOnClickListener { onAction(MainAction.ToggleService) }
         buildDrawer()
     }
-
     fun render(state: MainUiState, servers: List<ServersCache>, dark: Boolean) {
         val bg = if (dark) DARK_BG else LIGHT_BG; val surface = if (dark) DARK_SURFACE else LIGHT_SURFACE; val secondary = if (dark) DARK_SECONDARY else LIGHT_SECONDARY
         setBackgroundColor(bg); tabScroll.setBackgroundColor(surface); status.setBackgroundColor(surface); status.setTextColor(secondary)
@@ -84,14 +83,12 @@ class LegacyMainView(context: Context, private val onAction: (MainAction) -> Uni
         adapter.setSelectedGuid(state.selectedGuid); adapter.dark = dark; adapter.submitList(servers)
         drawer.setBackgroundColor(surface); for (i in 1 until drawer.childCount) (drawer.getChildAt(i) as? TextView)?.setTextColor(if (dark) DARK_TEXT else LIGHT_TEXT)
     }
-
     private fun buildDrawer() {
         drawer.addView(TextView(context).apply { text = context.getString(R.string.app_name); textSize = 22f; gravity = Gravity.CENTER_VERTICAL; setTextColor(Color.WHITE); setPadding(dp(16), 0, dp(16), 0); setBackgroundColor(TOOLBAR) }, LinearLayout.LayoutParams(-1, dp(112)))
         MainDestination.entries.forEach { item -> drawer.addView(TextView(context).apply { text = context.getString(item.labelRes); textSize = 16f; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), 0, dp(16), 0); setOnClickListener { closeDrawer(GravityCompat.START); onNavigate(item) } }, LinearLayout.LayoutParams(-1, dp(48))) }
     }
-
     private fun showSearch() {
-        val input = EditText(context).apply { hint = context.getString(R.string.menu_item_search); singleLine = true }
+        val input = EditText(context).apply { hint = context.getString(R.string.menu_item_search); setSingleLine(true) }
         android.app.AlertDialog.Builder(context).setTitle(context.getString(R.string.menu_item_search)).setView(input).setPositiveButton(context.getString(R.string.action_ok)) { _, _ -> onAction(MainAction.Search(input.text.toString())) }.setNegativeButton(context.getString(R.string.action_cancel), null).show()
     }
     private fun showImportMenu(anchor: View) = PopupMenu(context, anchor).apply {
