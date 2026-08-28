@@ -6,7 +6,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
 import com.v2ray.ang.handler.AppLocaleManager
-import com.v2ray.ang.ui.compose.AppTheme
+import com.v2ray.ang.ui.compose.DualAppTheme
 
 abstract class BaseComponentActivity : AppCompatActivity() {
 
@@ -15,7 +15,7 @@ abstract class BaseComponentActivity : AppCompatActivity() {
         AppLocaleManager.onActivityCreated(this)
         enableEdgeToEdge()
         setContent {
-            AppTheme {
+            DualAppTheme {
                 ScreenContent()
             }
         }
