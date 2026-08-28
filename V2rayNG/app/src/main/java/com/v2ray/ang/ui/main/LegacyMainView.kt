@@ -7,18 +7,17 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.ListView
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.v2ray.ang.R
+import com.v2ray.ang.dto.entities.ServersCache
 
 private const val BLUE = 0xFF2196F3.toInt()
 private const val TOOLBAR = 0xFF333333.toInt()
@@ -26,17 +25,17 @@ private const val LIGHT_BG = 0xFFFAFAFA.toInt()
 private const val DARK_BG = 0xFF303030.toInt()
 private const val LIGHT_SURFACE = Color.WHITE
 private const val DARK_SURFACE = 0xFF424242.toInt()
-private const val LIGHT_TEXT = 0xFF212121.toInt()
 private const val DARK_TEXT = Color.WHITE
-private const val LIGHT_SECONDARY = 0xFF757575.toInt()
+private const val LIGHT_TEXT = 0xFF212121.toInt()
 private const val DARK_SECONDARY = 0xFFD0D0D0.toInt()
+private const val LIGHT_SECONDARY = 0xFF757575.toInt()
 
 class LegacyMainView(context: Context, private val onAction: (MainAction) -> Unit, private val onNavigate: (MainDestination) -> Unit) : DrawerLayout(context) {
     private val toolbar = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setBackgroundColor(TOOLBAR) }
     private val title = TextView(context).apply { text = context.getString(R.string.title_server); textSize = 20f; setTextColor(Color.WHITE); gravity = Gravity.CENTER_VERTICAL }
     private val tabScroll = HorizontalScrollView(context).apply { isHorizontalScrollBarEnabled = false }
     private val tabRow = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
-    private val list = RecyclerView(context).apply { layoutManager = LinearLayoutManager(context); itemAnimator = null }
+    private val list = ListView(context).apply { divider = null; dividerHeight = 0; overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS }
     private val status = TextView(context).apply { textSize = 14f; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), 0, dp(16), 0) }
     private val adapter = LegacyServerAdapter(context, onAction)
     private val drawer = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
@@ -59,16 +58,16 @@ class LegacyMainView(context: Context, private val onAction: (MainAction) -> Uni
         tabScroll.addView(tabRow, ViewGroup.LayoutParams(-2, dp(48)))
         main.addView(tabScroll)
         main.addView(list, LinearLayout.LayoutParams(-1, 0, 1f))
-        val bottom = FrameLayout(context).apply { setBackgroundColor(LIGHT_SURFACE) }
-        bottom.addView(status, FrameLayout.LayoutParams(-1, dp(64)))
-        bottom.addView(fab, FrameLayout.LayoutParams(dp(56), dp(56), Gravity.END or Gravity.TOP).apply { marginEnd = dp(20); topMargin = -dp(28) })
+        val bottom = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(LIGHT_SURFACE) }
+        bottom.addView(status, LinearLayout.LayoutParams(-1, dp(64)))
         main.addView(bottom, LinearLayout.LayoutParams(-1, dp(64)))
+        addView(fab, LayoutParams(dp(56), dp(56)).apply { gravity = Gravity.END or Gravity.BOTTOM; rightMargin = dp(20); bottomMargin = dp(44) })
         list.adapter = adapter
         fab.setOnClickListener { onAction(MainAction.ToggleService) }
         buildDrawer()
     }
 
-    fun render(state: MainUiState, servers: List<com.v2ray.ang.dto.entities.ServersCache>, dark: Boolean) {
+    fun render(state: MainUiState, servers: List<ServersCache>, dark: Boolean) {
         val bg = if (dark) DARK_BG else LIGHT_BG; val surface = if (dark) DARK_SURFACE else LIGHT_SURFACE; val secondary = if (dark) DARK_SECONDARY else LIGHT_SECONDARY
         setBackgroundColor(bg); tabScroll.setBackgroundColor(surface); status.setBackgroundColor(surface); status.setTextColor(secondary)
         status.text = when (state.status) {
