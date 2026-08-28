@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -52,55 +53,35 @@ fun ConfirmDialog(
 ) {
     val confirmFocusRequester = remember { FocusRequester() }
     val dismissFocusRequester = remember { FocusRequester() }
-
     LaunchedEffect(dismissText) {
-        if (dismissText != null) dismissFocusRequester.requestFocus()
-        else confirmFocusRequester.requestFocus()
+        if (dismissText != null) dismissFocusRequester.requestFocus() else confirmFocusRequester.requestFocus()
     }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = title?.let { { Text(it) } },
         text = { Text(message, style = MaterialTheme.typography.bodyMedium) },
         confirmButton = {
-            TextButton(
-                onClick = { onConfirm(); onDismiss() },
-                modifier = Modifier.focusRequester(confirmFocusRequester)
-            ) {
+            TextButton(onClick = { onConfirm(); onDismiss() }, modifier = Modifier.focusRequester(confirmFocusRequester)) {
                 confirmIcon?.invoke()
                 if (confirmIcon != null) Spacer(Modifier.width(8.dp))
                 Text(confirmText)
             }
         },
-        dismissButton = dismissText?.let { text ->
-            {
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.focusRequester(dismissFocusRequester)
-                ) {
-                    Text(text)
-                }
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.surface
+        dismissButton = dismissText?.let { text -> {
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dismissFocusRequester)) { Text(text) }
+        } },
+        shape = MaterialTheme.shapes.medium,
+        containerColor = MaterialTheme.colorScheme.surface,
     )
 }
 
 @Composable
-fun DeleteConfirmDialog(
-    message: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
+fun DeleteConfirmDialog(message: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     ConfirmDialog(
         message = message,
         confirmText = stringResource(R.string.action_delete),
         confirmIcon = {
-            Icon(
-                painter = painterResource(R.drawable.ic_delete_24dp),
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
+            Icon(painterResource(R.drawable.ic_delete_24dp), contentDescription = null, modifier = Modifier.size(18.dp))
         },
         onConfirm = onConfirm,
         onDismiss = onDismiss
@@ -128,25 +109,25 @@ fun InputDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 fields.forEachIndexed { index, field ->
                     OutlinedTextField(
                         value = field.value,
                         onValueChange = { onFieldChange(index, it) },
                         label = { Text(field.label) },
-                        singleLine = false,
-                        maxLines = 5,
+                        singleLine = field.singleLine,
+                        maxLines = if (field.singleLine) 1 else 5,
                         visualTransformation = field.visualTransformation,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
-                            cursorColor = MaterialTheme.colorScheme.secondary,
+                            focusedBorderColor = Color(0xFF2196F3),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedLabelColor = Color(0xFF2196F3),
+                            cursorColor = Color(0xFF2196F3),
                             selectionColors = TextSelectionColors(
-                                handleColor = MaterialTheme.colorScheme.secondary,
-                                backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                                handleColor = Color(0xFF2196F3),
+                                backgroundColor = Color(0xFF2196F3).copy(alpha = 0.35f)
                             )
                         ),
                         modifier = Modifier.fillMaxWidth()
@@ -154,45 +135,25 @@ fun InputDialog(
                 }
             }
         },
-        confirmButton = {
-            TextButton(onClick = onConfirm) { Text(confirmText) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(dismissText) }
-        },
-        containerColor = MaterialTheme.colorScheme.surface
+        confirmButton = { TextButton(onClick = onConfirm) { Text(confirmText) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(dismissText) } },
+        shape = MaterialTheme.shapes.medium,
+        containerColor = MaterialTheme.colorScheme.surface,
     )
 }
 
 @Composable
-fun QRCodeDialog(
-    bitmap: Bitmap?,
-    onDismiss: () -> Unit
-) {
+fun QRCodeDialog(bitmap: Bitmap?, onDismiss: () -> Unit) {
     if (bitmap == null) return
     AlertDialog(
         onDismissRequest = onDismiss,
-        text = {
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = stringResource(R.string.acc_qr_code),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
-        },
-        containerColor = MaterialTheme.colorScheme.surface
+        text = { Image(bitmap = bitmap.asImageBitmap(), contentDescription = stringResource(R.string.acc_qr_code), modifier = Modifier.fillMaxWidth().aspectRatio(1f)) },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } },
+        shape = MaterialTheme.shapes.medium,
+        containerColor = MaterialTheme.colorScheme.surface,
     )
 }
 
-/**
- * When showRadio is true, displays RadioButton (single selection mode);
- * otherwise, plain clickable list mode.
- * The selectedOption parameter is used to highlight the selected item only when showRadio is true.
- */
 @Composable
 fun <T> SelectListDialog(
     options: List<T>,
@@ -213,38 +174,29 @@ fun <T> SelectListDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .then(
-                                if (showRadio) Modifier.selectable(
-                                    selected = isSelected,
-                                    onClick = { onSelected(option) },
-                                    role = Role.RadioButton
-                                ) else Modifier.clickable { onSelected(option) }
-                            )
+                            .then(if (showRadio) Modifier.selectable(selected = isSelected, onClick = { onSelected(option) }, role = Role.RadioButton) else Modifier.clickable { onSelected(option) })
                             .padding(vertical = 12.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (showRadio) {
                             RadioButton(
                                 selected = isSelected,
-                                onClick = null
+                                onClick = null,
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = Color(0xFF2196F3),
+                                    unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                         }
-                        Text(
-                            text = optionText(option),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
-                        )
+                        Text(text = optionText(option), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                     }
                 }
             }
         },
         confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.surface
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+        shape = MaterialTheme.shapes.medium,
+        containerColor = MaterialTheme.colorScheme.surface,
     )
 }
