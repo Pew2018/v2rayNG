@@ -58,7 +58,7 @@ class LegacyMainView(
     private val list = ListView(context).apply {
         divider = null
         dividerHeight = 0
-        overScrollMode = View.OVER_SCROLL_IF_CONTENTS_SCROLLABLE
+        overScrollMode = View.OVER_SCROLL_ALWAYS
     }
     private val status = TextView(context).apply {
         textSize = 14f
@@ -89,7 +89,6 @@ class LegacyMainView(
 
     init {
         setScrimColor(0x99000000.toInt())
-        drawerLayoutGravity = GravityCompat.START
         setupLegacyDrawerStatusBar()
 
         val main = LinearLayout(context).apply {
@@ -148,11 +147,7 @@ class LegacyMainView(
         if (Build.VERSION.SDK_INT >= 29) {
             window.isStatusBarContrastEnforced = false
         }
-        doOnApplyWindowInsets(window)
-    }
-
-    private fun doOnApplyWindowInsets(window: android.view.Window) {
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
             val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
             drawer.setPadding(drawer.paddingLeft, statusBars.top, drawer.paddingRight, drawer.paddingBottom)
             insets
@@ -196,7 +191,10 @@ class LegacyMainView(
 
         val expectedFabColor = if (state.isRunning) BLUE else if (dark) 0xFF616161.toInt() else 0xFF9E9E9E.toInt()
         if (fab.tag != expectedFabColor) {
-            fab.setBackgroundColor(expectedFabColor)
+            fab.background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(expectedFabColor)
+            }
             fab.tag = expectedFabColor
         }
         if (lastRenderedFabRunning != state.isRunning) {
