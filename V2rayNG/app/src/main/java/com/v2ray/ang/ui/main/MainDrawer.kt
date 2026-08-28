@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RectangleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
@@ -53,7 +53,7 @@ private val primaryDrawerItems = listOf(
     MainDestination.Routing,
     MainDestination.UserAssets,
     MainDestination.InterfaceSettings,
-    MainDestination.Settings
+    MainDestination.Settings,
 )
 
 private val drawerItems = primaryDrawerItems + listOf(
@@ -61,7 +61,7 @@ private val drawerItems = primaryDrawerItems + listOf(
     MainDestination.Logcat,
     MainDestination.CheckUpdate,
     MainDestination.BackupRestore,
-    MainDestination.About
+    MainDestination.About,
 )
 
 @Composable
@@ -71,11 +71,12 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
     val background = if (isDarkTheme) Color(0xFF303030) else Color.White
     val primaryText = if (isDarkTheme) Color.White else Color(0xFF212121)
     val iconColor = if (isDarkTheme) Color(0xFFBDBDBD) else Color(0xFF616161)
+    val squareShape = RoundedCornerShape(0.dp)
 
     ModalDrawerSheet(
         drawerState = drawerState,
         modifier = Modifier.fillMaxWidth(0.78f),
-        drawerShape = RectangleShape,
+        drawerShape = squareShape,
         drawerContainerColor = background,
         drawerContentColor = primaryText,
         drawerTonalElevation = 0.dp,
@@ -91,21 +92,34 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
             Surface(
                 modifier = Modifier.fillMaxWidth().height(152.dp),
                 color = Color(0xFF333333),
-                shape = RectangleShape,
+                shape = squareShape,
                 shadowElevation = 0.dp,
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.Start,
                 ) {
-                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall, color = Color.White)
-                    Text(stringResource(R.string.title_server), style = MaterialTheme.typography.bodyMedium, color = Color(0xFFBDBDBD))
+                    Text(
+                        stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                    )
+                    Text(
+                        stringResource(R.string.title_server),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFBDBDBD),
+                    )
                 }
             }
 
-            drawerItems.forEachIndexed { index, item ->
-                if (index == primaryDrawerItems.size) AppDivider()
+            for (index in drawerItems.indices) {
+                if (index == primaryDrawerItems.size) {
+                    AppDivider()
+                }
+                val item = drawerItems[index]
                 LegacyDrawerItem(
                     iconRes = item.iconRes,
                     labelRes = item.labelRes,
@@ -133,15 +147,26 @@ private fun LegacyDrawerItem(
             .padding(horizontal = 12.dp)
             .clickable(onClick = onClick),
         color = Color.Transparent,
-        shape = RectangleShape,
+        shape = RoundedCornerShape(0.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(painterResource(iconRes), contentDescription = null, modifier = Modifier.size(24.dp), tint = iconColor)
+            Icon(
+                painterResource(iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = iconColor,
+            )
             Spacer(Modifier.size(28.dp))
-            Text(stringResource(labelRes), color = primaryText, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                stringResource(labelRes),
+                color = primaryText,
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
     }
 }
