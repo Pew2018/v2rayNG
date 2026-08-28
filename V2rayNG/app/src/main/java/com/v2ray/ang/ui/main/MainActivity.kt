@@ -9,8 +9,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.v2ray.ang.AngApplication
@@ -49,6 +49,7 @@ import com.v2ray.ang.ui.server.ServerVlessActivity
 import com.v2ray.ang.ui.server.ServerVmessActivity
 import com.v2ray.ang.ui.server.ServerWireguardActivity
 import com.v2ray.ang.ui.settings.SettingsActivity
+import com.v2ray.ang.ui.settings.UiSettingsActivity
 import com.v2ray.ang.ui.subscription.SubSettingActivity
 import com.v2ray.ang.ui.userasset.UserAssetActivity
 import com.v2ray.ang.util.LogUtil
@@ -108,18 +109,11 @@ class MainActivity : HelperBaseComponentActivity() {
     @Composable
     override fun ScreenContent() {
         BackHandler { moveTaskToBack(false) }
-        val content: @Composable () -> Unit = if (uiStyle == UiPreferences.STYLE_LEGACY) {
-            { LegacyMainScreen(mainViewModel, ::handleMainAction, ::navigateTo) }
+        if (uiStyle == UiPreferences.STYLE_LEGACY) {
+            LegacyMainScreen(mainViewModel, ::handleMainAction, ::navigateTo)
         } else {
-            {
-                MainScreen(
-                    mainViewModel = mainViewModel,
-                    onAction = ::handleMainAction,
-                    onNavigate = ::navigateTo,
-                )
-            }
+            MainScreen(mainViewModel, ::handleMainAction, ::navigateTo)
         }
-        content()
     }
 
     private fun handleMainAction(action: MainAction) {
@@ -155,6 +149,7 @@ class MainActivity : HelperBaseComponentActivity() {
             MainDestination.PerAppProxy -> Intent(this, PerAppProxyActivity::class.java)
             MainDestination.Routing -> Intent(this, RoutingSettingActivity::class.java)
             MainDestination.UserAssets -> Intent(this, UserAssetActivity::class.java)
+            MainDestination.InterfaceSettings -> Intent(this, UiSettingsActivity::class.java)
             MainDestination.Settings -> Intent(this, SettingsActivity::class.java)
             MainDestination.Logcat -> Intent(this, LogcatActivity::class.java)
             MainDestination.CheckUpdate -> Intent(this, CheckUpdateActivity::class.java)
