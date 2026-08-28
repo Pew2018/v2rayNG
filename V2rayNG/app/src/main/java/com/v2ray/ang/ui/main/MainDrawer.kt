@@ -13,9 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -67,7 +67,6 @@ private val drawerItems = primaryDrawerItems + listOf(
 @Composable
 fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) -> Unit) {
     val isDarkTheme = LocalDarkTheme.current
-    val scrollState = rememberScrollState()
     val background = if (isDarkTheme) Color(0xFF303030) else Color.White
     val primaryText = if (isDarkTheme) Color.White else Color(0xFF212121)
     val iconColor = if (isDarkTheme) Color(0xFFBDBDBD) else Color(0xFF616161)
@@ -81,51 +80,37 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
         drawerContentColor = primaryText,
         drawerTonalElevation = 0.dp,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(background)
-                .verticalScroll(scrollState)
-                .padding(bottom = 12.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().background(background)) {
             Surface(
                 modifier = Modifier.fillMaxWidth().height(152.dp),
                 color = Color(0xFF333333),
                 shape = squareShape,
-                shadowElevation = 0.dp,
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
+                    modifier = Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
                     verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.Start,
                 ) {
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = Color.White,
-                    )
-                    Text(
-                        stringResource(R.string.title_server),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFBDBDBD),
-                    )
+                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall, color = Color.White)
+                    Text(stringResource(R.string.title_server), style = MaterialTheme.typography.bodyMedium, color = Color(0xFFBDBDBD))
                 }
             }
-
-            for (index in drawerItems.indices) {
-                if (index == primaryDrawerItems.size) {
-                    AppDivider()
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                overscrollEffect = null,
+            ) {
+                items(items = drawerItems, key = { it.name }) { item ->
+                    if (item == drawerItems[primaryDrawerItems.size]) {
+                        AppDivider()
+                    }
+                    LegacyDrawerItem(
+                        iconRes = item.iconRes,
+                        labelRes = item.labelRes,
+                        primaryText = primaryText,
+                        iconColor = iconColor,
+                        onClick = { onNavigate(item) },
+                    )
                 }
-                val item = drawerItems[index]
-                LegacyDrawerItem(
-                    iconRes = item.iconRes,
-                    labelRes = item.labelRes,
-                    primaryText = primaryText,
-                    iconColor = iconColor,
-                    onClick = { onNavigate(item) },
-                )
             }
         }
     }
@@ -139,33 +124,25 @@ private fun LegacyDrawerItem(
     iconColor: Color,
     onClick: () -> Unit,
 ) {
-    Surface(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .padding(horizontal = 12.dp)
-            .clickable(onClick = onClick),
-        color = Color.Transparent,
-        shape = RoundedCornerShape(0.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                painterResource(iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = iconColor,
-            )
-            Spacer(Modifier.size(28.dp))
-            Text(
-                stringResource(labelRes),
-                color = primaryText,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
+        Icon(
+            painterResource(iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            tint = iconColor,
+        )
+        Spacer(Modifier.size(28.dp))
+        Text(
+            stringResource(labelRes),
+            color = primaryText,
+            style = MaterialTheme.typography.bodyLarge,
+        )
     }
 }
