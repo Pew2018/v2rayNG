@@ -61,6 +61,9 @@ import com.v2ray.ang.R
 import com.v2ray.ang.util.AppIconFetcher
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 
+private val PixelToolbar = Color(0xFF333333)
+private val PixelToolbarText = Color.White
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
@@ -102,10 +105,11 @@ fun AppTopBar(
             },
             actions = actions,
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                titleContentColor = MaterialTheme.colorScheme.onSurface,
-                navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                // Matches the dark-gray Pixel Android 8-era toolbar shown in the reference.
+                containerColor = PixelToolbar,
+                titleContentColor = PixelToolbarText,
+                navigationIconContentColor = PixelToolbarText,
+                actionIconContentColor = PixelToolbarText
             )
         )
         AnimatedVisibility(
@@ -113,7 +117,11 @@ fun AppTopBar(
             enter = expandVertically(),
             exit = shrinkVertically()
         ) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.secondary)
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF2196F3),
+                trackColor = Color(0xFF555555)
+            )
         }
     }
 }
@@ -131,17 +139,21 @@ private fun SearchInputField(
             value = query,
             onValueChange = onQueryChange,
             singleLine = true,
-            textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp),
-            placeholder = { if (placeholder != null) Text(placeholder, style = TextStyle(color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)) },
+            textStyle = TextStyle(color = PixelToolbarText, fontSize = 16.sp),
+            placeholder = {
+                if (placeholder != null) {
+                    Text(placeholder, style = TextStyle(color = Color(0xFFBDBDBD), fontSize = 16.sp))
+                }
+            },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 focusedBorderColor = Color.Transparent,
                 unfocusedBorderColor = Color.Transparent,
-                cursorColor = MaterialTheme.colorScheme.secondary,
+                cursorColor = Color(0xFF2196F3),
                 selectionColors = TextSelectionColors(
-                    handleColor = MaterialTheme.colorScheme.secondary,
-                    backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                    handleColor = Color(0xFF2196F3),
+                    backgroundColor = Color(0xFF2196F3).copy(alpha = 0.4f)
                 )
             ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -214,7 +226,7 @@ fun AppListItem(
         Checkbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.secondary)
+            colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2196F3))
         )
     }
 }
@@ -272,7 +284,6 @@ fun ReorderableCollectionItemScope.reorderableDragHandle(): Modifier {
     val hapticFeedback = LocalHapticFeedback.current
     return Modifier.longPressDraggableHandle(
         onDragStarted = {
-            // Platform haptics honor the user's touch-feedback setting.
             hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
         }
     )
