@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -40,9 +41,7 @@ fun FormTextField(
     maxLines: Int = 5,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         OutlinedTextField(
             value = value,
@@ -89,14 +88,10 @@ fun FormDropdownField(
         expanded = expanded,
         onExpandedChange = { newExpanded ->
             if (!enabled) return@ExposedDropdownMenuBox
-            if (!editable && newExpanded) {
-                keyboardController?.hide()
-            }
+            if (!editable && newExpanded) keyboardController?.hide()
             expanded = newExpanded
         },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         OutlinedTextField(
             value = value,
@@ -116,17 +111,11 @@ fun FormDropdownField(
                     backgroundColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
                 )
             ),
-            modifier = Modifier
-                .menuAnchor(
-                    type = if (editable) ExposedDropdownMenuAnchorType.PrimaryEditable
-                    else ExposedDropdownMenuAnchorType.PrimaryNotEditable
-                )
-                .fillMaxWidth()
-                .onFocusChanged { focusState ->
-                    if (!editable && focusState.isFocused) {
-                        keyboardController?.hide()
-                    }
-                }
+            modifier = Modifier.menuAnchor(
+                type = if (editable) ExposedDropdownMenuAnchorType.PrimaryEditable else ExposedDropdownMenuAnchorType.PrimaryNotEditable
+            ).fillMaxWidth().onFocusChanged { focusState ->
+                if (!editable && focusState.isFocused) keyboardController?.hide()
+            }
         )
         ExposedDropdownMenu(
             expanded = expanded,
