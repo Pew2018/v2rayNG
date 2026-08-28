@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  ABI_FILTERS: arm64-v8a
+
 jobs:
   build-debug:
     runs-on: ubuntu-latest
@@ -32,25 +35,32 @@ jobs:
           echo "NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
           sed -i '10i\\    ndkVersion = "29.0.14206865"' V2rayNG/app/build.gradle.kts
 
-      - name: Restore cached libhevtun
+      - name: Restore cached arm64 libhevtun
         id: cache-libhevtun-restore
         uses: actions/cache/restore@v6
         with:
           path: libs
-          key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
+          key: libhevtun-arm64-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
 
-      - name: Build libhevtun
+      - name: Build arm64 libhevtun
         if: steps.cache-libhevtun-restore.outputs.cache-hit != 'true'
-        run: bash compile-hevtun.sh
+        run: ABI_FILTERS=arm64-v8a bash compile-hevtun.sh
 
-      - name: Save libhevtun cache
+      - name: Save arm64 libhevtun cache
         if: steps.cache-libhevtun-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: libs
-          key: libhevtun-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
+          key: libhevtun-arm64-${{ runner.os }}-${{ env.NDK_HOME }}-${{ hashFiles('.git/modules/hev-socks5-tunnel/HEAD') }}-${{ hashFiles('compile-hevtun.sh') }}
 
-      - name: Copy libhevtun
+      - name: Verify native libraries
+        run: |
+          test -f libs/arm64-v8a/libhev-socks5-tunnel.so
+          test -f libs/arm64-v8a/libhevsockstun.so
+          test "$(find libs -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 1
+          test -d libs/arm64-v8a
+
+      - name: Copy native libraries
         run: cp -r libs V2rayNG/app
 
       - name: Fetch AndroidLibXrayLite tag
@@ -60,7 +70,7 @@ jobs:
           echo "CURRENT_TAG=$CURRENT_TAG" >> "$GITHUB_ENV"
           popd
 
-      - name: Download libv2ray
+      - name: Download libv2ray AAR
         uses: robinraju/release-downloader@v1.13
         with:
           repository: '2dust/AndroidLibXrayLite'
@@ -74,16 +84,22 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Build debug APK
+      - name: Build only arm64-v8a Debug APK
         run: |
           cd V2rayNG
           echo "sdk.dir=${ANDROID_HOME}" > local.properties
           chmod 755 gradlew
-          ./gradlew assembleFdroidDebug --stacktrace
+          ./gradlew assembleFdroidDebug -PABI_FILTERS=arm64-v8a --no-daemon --stacktrace
 
-      - name: Upload debug APKs
+      - name: Verify only arm64-v8a APK output
+        run: |
+          test -f V2rayNG/app/build/outputs/apk/fdroid/debug/v2rayNG_2.3.5-fdroid_arm64-v8a.apk
+          test "$(find V2rayNG/app/build/outputs/apk -type f -name '*.apk' | wc -l)" -eq 1
+          test -z "$(find V2rayNG/app/build/outputs/apk -type f -name '*.apk' ! -name '*arm64-v8a*.apk')"
+
+      - name: Upload arm64-v8a Debug APK
         uses: actions/upload-artifact@v7
         with:
-          name: v2rayNG-pixel-debug
-          path: V2rayNG/app/build/outputs/apk/**/*.apk
+          name: v2rayNG-pixel-arm64-debug
+          path: V2rayNG/app/build/outputs/apk/fdroid/debug/v2rayNG_2.3.5-fdroid_arm64-v8a.apk
           if-no-files-found: error
