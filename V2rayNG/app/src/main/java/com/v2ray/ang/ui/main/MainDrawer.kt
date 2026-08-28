@@ -66,11 +66,11 @@ private val drawerItems = primaryDrawerItems + listOf(
 @Composable
 fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) -> Unit) {
     val drawerScrollState = rememberScrollState()
-
     ModalDrawerSheet(
         drawerState = drawerState,
         modifier = Modifier.fillMaxWidth(0.75f),
-        drawerContainerColor = MaterialTheme.colorScheme.surface
+        drawerContainerColor = MaterialTheme.colorScheme.surface,
+        drawerContentColor = MaterialTheme.colorScheme.onSurface
     ) {
         Column(
             modifier = Modifier
@@ -78,14 +78,11 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                 .verticalScrollbar(drawerScrollState)
         ) {
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                color = Color(0xFF333333)
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -94,16 +91,12 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                         painter = painterResource(R.mipmap.ic_launcher_foreground),
                         contentDescription = null,
                         modifier = Modifier.size(120.dp),
-                        colorFilter = if (isDarkTheme) {
-                            ColorFilter.tint(Color.White, BlendMode.SrcIn)
-                        } else {
-                            null
-                        }
+                        colorFilter = if (isDarkTheme) ColorFilter.tint(Color.White, BlendMode.SrcIn) else null
                     )
                     Text(
                         text = stringResource(R.string.app_name),
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                 }
             }
@@ -113,8 +106,22 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                     label = { Text(stringResource(item.labelRes)) },
                     selected = false,
                     onClick = { onNavigate(item) },
-                    icon = { Icon(painterResource(item.iconRes), contentDescription = null) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                    icon = {
+                        Icon(
+                            painterResource(item.iconRes),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                    colors = NavigationDrawerItemDefaults.colors(
+                        unselectedContainerColor = Color.Transparent,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        selectedContainerColor = Color(0xFFBBDEFB),
+                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                        selectedIconColor = Color(0xFF2196F3)
+                    )
                 )
             }
         }
