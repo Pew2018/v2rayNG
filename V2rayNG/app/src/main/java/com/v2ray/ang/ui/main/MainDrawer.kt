@@ -39,6 +39,7 @@ enum class MainDestination(@DrawableRes val iconRes: Int, @StringRes val labelRe
     PerAppProxy(R.drawable.ic_per_apps_24dp, R.string.per_app_proxy_settings),
     Routing(R.drawable.ic_routing_24dp, R.string.routing_settings_title),
     UserAssets(R.drawable.ic_file_24dp, R.string.title_user_asset_setting),
+    InterfaceSettings(R.drawable.ic_settings_24dp, R.string.title_interface_settings),
     Settings(R.drawable.ic_settings_24dp, R.string.title_settings),
     Promotion(R.drawable.ic_promotion_24dp, R.string.title_pref_promotion),
     Logcat(R.drawable.ic_logcat_24dp, R.string.title_logcat),
@@ -52,6 +53,7 @@ private val primaryDrawerItems = listOf(
     MainDestination.PerAppProxy,
     MainDestination.Routing,
     MainDestination.UserAssets,
+    MainDestination.InterfaceSettings,
     MainDestination.Settings
 )
 
@@ -93,11 +95,7 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                         modifier = Modifier.size(120.dp),
                         colorFilter = if (isDarkTheme) ColorFilter.tint(Color.White, BlendMode.SrcIn) else null
                     )
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White
-                    )
+                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, color = Color.White)
                 }
             }
             drawerItems.forEachIndexed { index, item ->
@@ -106,21 +104,15 @@ fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) ->
                     label = { Text(stringResource(item.labelRes)) },
                     selected = false,
                     onClick = { onNavigate(item) },
-                    icon = {
-                        Icon(
-                            painterResource(item.iconRes),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
+                    icon = { Icon(painterResource(item.iconRes), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
                     colors = NavigationDrawerItemDefaults.colors(
                         unselectedContainerColor = Color.Transparent,
                         unselectedTextColor = MaterialTheme.colorScheme.onSurface,
                         unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        selectedContainerColor = Color(0xFFBBDEFB),
+                        selectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                        selectedIconColor = Color(0xFF2196F3)
+                        selectedIconColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
