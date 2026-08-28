@@ -54,7 +54,7 @@ class LegacyMainView(
     private val list = ListView(context).apply {
         divider = null
         dividerHeight = 0
-        overScrollMode = View.OVER_SCROLL_IF_CONTENTS_SCROLLS
+        overScrollMode = View.OVER_SCROLL_IF_CONTENTS_SCROLLABLE
     }
     private val status = TextView(context).apply {
         textSize = 14f
@@ -81,6 +81,7 @@ class LegacyMainView(
     private var lastRenderedSelectedGuid: String? = null
     private var lastRenderedDark: Boolean? = null
     private var lastRenderedStatusText: String? = null
+    private var lastRenderedFabRunning: Boolean? = null
 
     init {
         setScrimColor(0x99000000.toInt())
@@ -144,7 +145,7 @@ class LegacyMainView(
         val secondary = if (dark) DARK_SECONDARY else LIGHT_SECONDARY
 
         setBackgroundColor(bg)
-        if (tabScroll.background !== null || lastRenderedDark != dark) tabScroll.setBackgroundColor(surface)
+        tabScroll.setBackgroundColor(surface)
         status.setBackgroundColor(surface)
         drawer.setBackgroundColor(surface)
 
@@ -170,10 +171,9 @@ class LegacyMainView(
             fab.setBackgroundColor(expectedFabColor)
             fab.tag = expectedFabColor
         }
-        val expectedFabIcon = if (state.isRunning) R.drawable.ic_stop_24dp else R.drawable.ic_play_24dp
-        if (fab.getTag(R.id.fab_icon_tag) != expectedFabIcon) {
-            fab.setImageResource(expectedFabIcon)
-            fab.setTag(R.id.fab_icon_tag, expectedFabIcon)
+        if (lastRenderedFabRunning != state.isRunning) {
+            fab.setImageResource(if (state.isRunning) R.drawable.ic_stop_24dp else R.drawable.ic_play_24dp)
+            lastRenderedFabRunning = state.isRunning
         }
 
         val groupsSignature = state.groups.joinToString("|") { "${it.id}:${it.remarks}" }
