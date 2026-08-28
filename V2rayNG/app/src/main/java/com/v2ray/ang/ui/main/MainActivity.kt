@@ -9,8 +9,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.v2ray.ang.AngApplication
@@ -31,8 +31,6 @@ import com.v2ray.ang.ui.AboutActivity
 import com.v2ray.ang.ui.backup.BackupActivity
 import com.v2ray.ang.ui.base.HelperBaseComponentActivity
 import com.v2ray.ang.ui.checkupdate.CheckUpdateActivity
-import com.v2ray.ang.ui.compose.ThemeManager
-import com.v2ray.ang.ui.compose.UiPreferences
 import com.v2ray.ang.ui.logcat.LogcatActivity
 import com.v2ray.ang.ui.perappproxy.PerAppProxyActivity
 import com.v2ray.ang.ui.routing.RoutingSettingActivity
@@ -87,8 +85,10 @@ class MainActivity : HelperBaseComponentActivity() {
     private val settingsActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         val restartService = SettingsChangeManager.consumeRestartService()
         val refreshGroups = SettingsChangeManager.consumeSetupGroupTab()
-        ThemeManager.refresh()
-        uiStyle = MmkvManager.decodeSettingsString(UiPreferences.PREF_UI_STYLE, UiPreferences.STYLE_MATERIAL3) ?: UiPreferences.STYLE_MATERIAL3
+        val newStyle = MmkvManager.decodeSettingsString(UiPreferences.PREF_UI_STYLE, UiPreferences.STYLE_MATERIAL3) ?: UiPreferences.STYLE_MATERIAL3
+        uiStyle = newStyle
+        com.v2ray.ang.ui.compose.ThemeManager.setUiStyle(newStyle)
+        com.v2ray.ang.ui.compose.ThemeManager.refresh()
         mainViewModel.refreshUiSettings()
         if (refreshGroups) mainViewModel.onAction(MainAction.RefreshGroups)
         if (restartService) LauncherManager.restartService(this)
@@ -102,17 +102,20 @@ class MainActivity : HelperBaseComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        ThemeManager.refresh()
-        uiStyle = MmkvManager.decodeSettingsString(UiPreferences.PREF_UI_STYLE, UiPreferences.STYLE_MATERIAL3) ?: UiPreferences.STYLE_MATERIAL3
+        val newStyle = MmkvManager.decodeSettingsString(UiPreferences.PREF_UI_STYLE, UiPreferences.STYLE_MATERIAL3) ?: UiPreferences.STYLE_MATERIAL3
+        uiStyle = newStyle
+        com.v2ray.ang.ui.compose.ThemeManager.refresh()
     }
 
     @Composable
     override fun ScreenContent() {
         BackHandler { moveTaskToBack(false) }
         if (uiStyle == UiPreferences.STYLE_LEGACY) {
-            LegacyMainScreen(mainViewModel, ::handleMainAction, ::navigateTo)
-        } else {
+            // The original Android 8 / Pixel-like UI is retained here.
             MainScreen(mainViewModel, ::handleMainAction, ::navigateTo)
+        } else {
+            // Material 3 Expressive is a separate UI implementation.
+            ExpressiveMainScreen(mainViewModel, ::handleMainAction, ::navigateTo)
         }
     }
 
