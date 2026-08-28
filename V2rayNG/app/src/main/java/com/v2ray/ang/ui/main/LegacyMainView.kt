@@ -3,6 +3,7 @@ package com.v2ray.ang.ui.main
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -12,8 +13,11 @@ import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.PopupMenu
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.view.GravityCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.ServersCache
@@ -86,13 +90,14 @@ class LegacyMainView(
     init {
         setScrimColor(0x99000000.toInt())
         drawerLayoutGravity = GravityCompat.START
+        setupLegacyDrawerStatusBar()
 
         val main = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(LIGHT_BG)
         }
         addView(main, LayoutParams(-1, -1))
-        addView(drawer, LayoutParams(dp(300), -1).apply { gravity = Gravity.START })
+        addView(drawer, LayoutParams(dp(276), -1).apply { gravity = Gravity.START })
 
         toolbar.addView(button(R.drawable.ic_menu_24dp) { openDrawer(GravityCompat.START) }, LinearLayout.LayoutParams(dp(48), dp(56)))
         toolbar.addView(title, LinearLayout.LayoutParams(0, dp(56), 1f))
@@ -130,6 +135,29 @@ class LegacyMainView(
             }
         }
         drawerActionListener?.let(::addDrawerListener)
+    }
+
+    private fun setupLegacyDrawerStatusBar() {
+        val activity = context as? AppCompatActivity ?: return
+        val window = activity.window
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.getInsetsController(window, this).isAppearanceLightStatusBars = false
+        if (Build.VERSION.SDK_INT >= 21) {
+            window.statusBarColor = TOOLBAR
+        }
+        if (Build.VERSION.SDK_INT >= 29) {
+            window.isStatusBarContrastEnforced = false
+        }
+        doOnApplyWindowInsets(window)
+    }
+
+    private fun doOnApplyWindowInsets(window: android.view.Window) {
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            drawer.setPadding(drawer.paddingLeft, statusBars.top, drawer.paddingRight, drawer.paddingBottom)
+            insets
+        }
+        requestApplyInsets()
     }
 
     override fun onDetachedFromWindow() {
@@ -216,24 +244,32 @@ class LegacyMainView(
     }
 
     private fun buildDrawer() {
-        drawer.addView(
-            TextView(context).apply {
-                text = context.getString(R.string.app_name)
-                textSize = 22f
-                gravity = Gravity.CENTER_VERTICAL
-                setTextColor(Color.WHITE)
-                setPadding(dp(16), 0, dp(16), 0)
-                setBackgroundColor(TOOLBAR)
-            },
-            LinearLayout.LayoutParams(-1, dp(112)),
-        )
+        val header = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.BOTTOM
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            setBackgroundColor(TOOLBAR)
+        }
+        header.addView(TextView(context).apply {
+            text = context.getString(R.string.app_name)
+            textSize = 20f
+            setTextColor(Color.WHITE)
+        })
+        header.addView(TextView(context).apply {
+            text = context.getString(R.string.title_server)
+            textSize = 13f
+            setTextColor(0xFFBDBDBD.toInt())
+            setPadding(0, dp(3), 0, 0)
+        })
+        drawer.addView(header, LinearLayout.LayoutParams(-1, dp(96)))
+
         MainDestination.entries.forEach { item ->
             drawer.addView(
                 TextView(context).apply {
                     text = context.getString(item.labelRes)
                     textSize = 16f
                     gravity = Gravity.CENTER_VERTICAL
-                    setPadding(dp(16), 0, dp(16), 0)
+                    setPadding(dp(20), 0, dp(16), 0)
                     setBackgroundColor(Color.TRANSPARENT)
                     setTextColor(LIGHT_TEXT)
                     setOnClickListener {
