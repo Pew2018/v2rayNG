@@ -12,11 +12,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.ui.compose.LocalDarkTheme
 
 @Composable
-fun LegacyMainScreen(mainViewModel: MainViewModel, onAction: (MainAction) -> Unit, onNavigate: (MainDestination) -> Unit) {
+fun LegacyMainScreen(
+    mainViewModel: MainViewModel,
+    onAction: (MainAction) -> Unit,
+    onNavigate: (MainDestination) -> Unit,
+) {
     val state by mainViewModel.uiState.collectAsStateWithLifecycle()
     val servers by mainViewModel.serversForGroup(state.selectedGroupId).collectAsStateWithLifecycle()
     val dark = LocalDarkTheme.current
     val context = LocalContext.current
+
     BackHandler { (context as? Activity)?.moveTaskToBack(false) }
-    AndroidView(Modifier.fillMaxSize(), factory = { LegacyMainView(it, onAction, onNavigate) }, update = { it.render(state, servers, dark) })
+
+    AndroidView(
+        factory = { viewContext -> LegacyMainView(viewContext, onAction, onNavigate) },
+        modifier = Modifier.fillMaxSize(),
+        update = { view -> view.render(state, servers, dark) },
+    )
 }
