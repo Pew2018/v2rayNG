@@ -2,7 +2,7 @@ package com.v2ray.ang.ui.main
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,28 +11,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RectangleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.AppDivider
 import com.v2ray.ang.ui.compose.LocalDarkTheme
-import com.v2ray.ang.ui.compose.verticalScrollbar
 
 enum class MainDestination(@DrawableRes val iconRes: Int, @StringRes val labelRes: Int) {
     Subscriptions(R.drawable.ic_subscriptions_24dp, R.string.title_sub_setting),
@@ -65,55 +61,119 @@ private val drawerItems = primaryDrawerItems + listOf(
     MainDestination.About
 )
 
+/**
+ * Legacy drawer intentionally uses a flat Android-8-era layout instead of M3 NavigationDrawerItem.
+ * It avoids the expensive image/filter/scrollbar work that previously made drawer opening feel delayed.
+ */
 @Composable
 fun MainDrawerContent(drawerState: DrawerState, onNavigate: (MainDestination) -> Unit) {
-    val drawerScrollState = rememberScrollState()
+    val isDarkTheme = LocalDarkTheme.current
+    val scrollState = rememberScrollState()
+    val background = if (isDarkTheme) Color(0xFF303030) else Color.White
+    val primaryText = if (isDarkTheme) Color.White else Color(0xFF212121)
+    val secondaryText = if (isDarkTheme) Color(0xFFBDBDBD) else Color(0xFF757575)
+    val iconColor = if (isDarkTheme) Color(0xFFBDBDBD) else Color(0xFF616161)
+    val pressedBg = if (isDarkTheme) Color(0xFF424242) else Color(0xFFF0F0F0)
+
     ModalDrawerSheet(
         drawerState = drawerState,
-        modifier = Modifier.fillMaxWidth(0.75f),
-        drawerContainerColor = MaterialTheme.colorScheme.surface,
-        drawerContentColor = MaterialTheme.colorScheme.onSurface
+        modifier = Modifier.fillMaxWidth(0.78f),
+        drawerShape = RectangleShape,
+        drawerContainerColor = background,
+        drawerContentColor = primaryText,
+        drawerTonalElevation = 0.dp,
+        drawerShadowElevation = 12.dp,
     ) {
         Column(
             modifier = Modifier
-                .verticalScroll(drawerScrollState)
-                .verticalScrollbar(drawerScrollState)
+                .fillMaxSize()
+                .background(background)
+                .verticalScroll(scrollState)
+                .padding(bottom = 12.dp)
         ) {
             Surface(
-                modifier = Modifier.fillMaxWidth().height(180.dp),
-                color = Color(0xFF333333)
+                modifier = Modifier.fillMaxWidth().height(152.dp),
+                color = Color(0xFF333333),
+                shape = RectangleShape,
+                shadowElevation = 0.dp,
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
+                    verticalArrangement = Arrangement.Bottom,
+                    horizontalAlignment = Alignment.Start,
                 ) {
-                    val isDarkTheme = LocalDarkTheme.current
-                    Image(
-                        painter = painterResource(R.mipmap.ic_launcher_foreground),
-                        contentDescription = null,
-                        modifier = Modifier.size(120.dp),
-                        colorFilter = if (isDarkTheme) ColorFilter.tint(Color.White, BlendMode.SrcIn) else null
+                    Text(
+                        stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
                     )
-                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, color = Color.White)
+                    Text(
+                        stringResource(R.string.title_server),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFFBDBDBD),
+                    )
                 }
             }
+
             drawerItems.forEachIndexed { index, item ->
-                if (index == primaryDrawerItems.size) AppDivider()
-                NavigationDrawerItem(
-                    label = { Text(stringResource(item.labelRes)) },
-                    selected = false,
+                if (index == primaryDrawerItems.size) {
+                    AppDivider()
+                }
+                LegacyDrawerItem(
+                    iconRes = item.iconRes,
+                    labelRes = item.labelRes,
+                    primaryText = primaryText,
+                    iconColor = iconColor,
+                    pressedBackground = pressedBg,
+                    secondaryText = secondaryText,
                     onClick = { onNavigate(item) },
-                    icon = { Icon(painterResource(item.iconRes), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
-                    colors = NavigationDrawerItemDefaults.colors(
-                        unselectedContainerColor = Color.Transparent,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        selectedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                        selectedIconColor = MaterialTheme.colorScheme.primary
-                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegacyDrawerItem(
+    @DrawableRes iconRes: Int,
+    @StringRes labelRes: Int,
+    primaryText: Color,
+    iconColor: Color,
+    pressedBackground: Color,
+    secondaryText: Color,
+    onClick: () -> Unit,
+) {
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .background(Color.Transparent)
+            .padding(horizontal = 12.dp)
+            .then(Modifier),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onClick),
+            color = Color.Transparent,
+            shape = RectangleShape,
+        ) {
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp).padding(0.dp),
+                    tint = iconColor,
+                )
+                androidx.compose.foundation.layout.Spacer(Modifier.size(28.dp))
+                Text(
+                    text = stringResource(labelRes),
+                    color = primaryText,
+                    style = MaterialTheme.typography.bodyLarge,
                 )
             }
         }
