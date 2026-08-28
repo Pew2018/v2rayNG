@@ -4,6 +4,9 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 /**
  * Kept as compatibility helpers for existing callers.
@@ -11,7 +14,6 @@ import androidx.compose.ui.Modifier
  * The previous implementation observed scroll state on every movement, restarted
  * coroutines and alpha animations, and performed layout calculations during draw.
  * That work was especially visible on long server lists under Android 16.
- * Native Compose scrolling is deliberately left to handle rendering here.
  */
 fun Modifier.verticalScrollbar(
     scrollState: ScrollState,
@@ -34,12 +36,12 @@ fun Modifier.verticalScrollbar(
 ): Modifier = this
 
 data class ScrollbarConfig(
-    val thickness: androidx.compose.ui.unit.Dp = 4.dp,
-    val minThumbSize: androidx.compose.ui.unit.Dp = 24.dp,
-    val thumbColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
-    val trackColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Transparent,
-    val padding: androidx.compose.ui.unit.Dp = 2.dp,
-    val cornerRadius: androidx.compose.ui.unit.Dp = 2.dp,
+    val thickness: Dp = 4.dp,
+    val minThumbSize: Dp = 24.dp,
+    val thumbColor: Color = Color.Unspecified,
+    val trackColor: Color = Color.Transparent,
+    val padding: Dp = 2.dp,
+    val cornerRadius: Dp = 2.dp,
     val fadeOutDurationMs: Int = 1500,
     val fadeAnimDurationMs: Int = 300,
 )
