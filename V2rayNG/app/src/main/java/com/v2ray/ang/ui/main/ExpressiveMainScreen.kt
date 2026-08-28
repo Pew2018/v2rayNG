@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ElevatedCard
@@ -41,7 +42,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.v2ray.ang.R
 import com.v2ray.ang.dto.entities.ServersCache
-import com.v2ray.ang.ui.compose.LocalDarkTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
@@ -71,149 +70,103 @@ fun ExpressiveMainScreen(
     onAction: (MainAction) -> Unit,
     onNavigate: (MainDestination) -> Unit,
 ) {
-    val uiState by mainViewModel.uiState.collectAsStateWithLifecycle()
-    val isLoading by mainViewModel.isLoading.collectAsStateWithLifecycle()
-    val groups = uiState.groups
-    val selectedGroupId = uiState.selectedGroupId
-    val selectedGuid = uiState.selectedGuid
-    val isRunning = uiState.isRunning
-    LocalDarkTheme.current
+    val state by mainViewModel.uiState.collectAsStateWithLifecycle()
+    val loading by mainViewModel.isLoading.collectAsStateWithLifecycle()
+    val groups = state.groups
+    val selectedGroupId = state.selectedGroupId
+    val selectedGuid = state.selectedGuid
+    val running = state.isRunning
     val scope = rememberCoroutineScope()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val snackbarHostState = remember { SnackbarHostState() }
-    var searchOpen by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedTab by remember { mutableIntStateOf(0) }
+    val drawer = rememberDrawerState(DrawerValue.Closed)
+    val snackbar = remember { SnackbarHostState() }
+    var searching by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var tab by remember { mutableIntStateOf(0) }
     val servers by mainViewModel.serversForGroup(selectedGroupId).collectAsStateWithLifecycle()
 
     LaunchedEffect(groups, selectedGroupId) {
-        val index = groups.indexOfFirst { it.id == selectedGroupId }
-        if (index >= 0) selectedTab = index
-    }
-
-    fun selectGroup(index: Int) {
-        val group = groups.getOrNull(index) ?: return
-        selectedTab = index
-        onAction(MainAction.SelectGroup(group.id))
+        val i = groups.indexOfFirst { it.id == selectedGroupId }
+        if (i >= 0) tab = i
     }
 
     ModalNavigationDrawer(
-        drawerState = drawerState,
+        drawerState = drawer,
         drawerContent = {
-            Column(
-                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(12.dp)
-            ) {
+            Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(12.dp)) {
                 Spacer(Modifier.height(24.dp))
-                Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(20.dp, 12.dp)
-                )
+                Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(20.dp, 12.dp))
                 Spacer(Modifier.height(8.dp))
                 MainDestination.entries.forEach { destination ->
                     NavigationDrawerItem(
                         label = { Text(stringResource(destination.labelRes)) },
                         selected = false,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            onNavigate(destination)
-                        },
+                        onClick = { scope.launch { drawer.close() }; onNavigate(destination) },
                         colors = NavigationDrawerItemDefaults.colors(),
-                        modifier = Modifier.padding(vertical = 2.dp)
+                        modifier = Modifier.padding(vertical = 2.dp),
                     )
                 }
             }
-        }
+        },
     ) {
         Scaffold(
             topBar = {
-                if (searchOpen) {
+                if (searching) {
                     SearchBar(
-                        query = searchQuery,
-                        onQueryChange = {
-                            searchQuery = it
-                            onAction(MainAction.Search(it))
-                        },
-                        onSearch = { onAction(MainAction.Search(searchQuery)) },
+                        query = query,
+                        onQueryChange = { query = it; onAction(MainAction.Search(it)) },
+                        onSearch = { onAction(MainAction.Search(query)) },
                         active = true,
-                        onActiveChange = { active ->
-                            if (!active) {
-                                searchOpen = false
-                                searchQuery = ""
-                                onAction(MainAction.Search(""))
-                            }
-                        },
+                        onActiveChange = { active -> if (!active) { searching = false; query = ""; onAction(MainAction.Search("")) } },
                         placeholder = { Text("Search servers") },
                         leadingIcon = {
-                            IconButton(onClick = {
-                                searchOpen = false
-                                searchQuery = ""
-                                onAction(MainAction.Search(""))
-                            }) {
+                            IconButton(onClick = { searching = false; query = ""; onAction(MainAction.Search("")) }) {
                                 Icon(painterResource(R.drawable.ic_arrow_back_24dp), contentDescription = "Back")
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {}
                 } else {
                     LargeTopAppBar(
                         title = {
                             Column {
                                 Text(stringResource(R.string.title_server), style = MaterialTheme.typography.headlineSmall)
-                                AnimatedVisibility(visible = isLoading) {
-                                    Text("Updating…", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                }
+                                AnimatedVisibility(loading) { Text("Updating…", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
                             }
                         },
                         navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(painterResource(R.drawable.ic_menu_24dp), contentDescription = "Menu")
-                            }
+                            IconButton(onClick = { scope.launch { drawer.open() } }) { Icon(painterResource(R.drawable.ic_menu_24dp), contentDescription = "Menu") }
                         },
                         actions = {
-                            IconButton(onClick = { searchOpen = true }) {
-                                Icon(painterResource(R.drawable.ic_search_24dp), contentDescription = "Search")
-                            }
-                            IconButton(onClick = { onAction(MainAction.ImportClipboard) }) {
-                                Icon(painterResource(R.drawable.ic_add_24dp), contentDescription = "Import")
-                            }
-                            IconButton(onClick = { onAction(MainAction.UpdateSubscriptions) }) {
-                                Icon(painterResource(R.drawable.ic_refresh_24dp), contentDescription = "Refresh")
-                            }
+                            IconButton(onClick = { searching = true }) { Icon(painterResource(R.drawable.ic_search_24dp), contentDescription = "Search") }
+                            IconButton(onClick = { onAction(MainAction.ImportClipboard) }) { Icon(painterResource(R.drawable.ic_add_24dp), contentDescription = "Import") }
+                            IconButton(onClick = { onAction(MainAction.UpdateSubscriptions) }) { Icon(painterResource(R.drawable.ic_more_vert_24dp), contentDescription = "Refresh") }
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                     )
                 }
             },
-            snackbarHost = { SnackbarHost(snackbarHostState) },
+            snackbarHost = { SnackbarHost(snackbar) },
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = { onAction(MainAction.ToggleService) },
                     shape = MaterialTheme.shapes.extraLarge,
-                    containerColor = if (isRunning) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
-                    contentColor = if (isRunning) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.navigationBarsPadding()
+                    containerColor = if (running) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
+                    contentColor = if (running) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.navigationBarsPadding(),
                 ) {
-                    Icon(
-                        painterResource(if (isRunning) R.drawable.ic_stop_24dp else R.drawable.ic_play_24dp),
-                        contentDescription = if (isRunning) "Stop" else "Start",
-                    )
+                    Icon(painterResource(if (running) R.drawable.ic_stop_24dp else R.drawable.ic_play_24dp), contentDescription = if (running) "Stop" else "Start")
                 }
-            }
-        ) { innerPadding ->
-            Column(Modifier.fillMaxSize().padding(innerPadding)) {
+            },
+        ) { padding ->
+            Column(Modifier.fillMaxSize().padding(padding)) {
                 if (groups.size > 1) {
                     TabRow(
-                        selectedTabIndex = selectedTab.coerceIn(0, groups.lastIndex),
+                        selectedTabIndex = tab.coerceIn(0, groups.lastIndex),
                         containerColor = MaterialTheme.colorScheme.background,
                         contentColor = MaterialTheme.colorScheme.primary,
                     ) {
-                        groups.forEachIndexed { index, group ->
-                            Tab(
-                                selected = selectedTab == index,
-                                onClick = { selectGroup(index) },
-                                text = { Text(group.remarks, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            )
+                        groups.forEachIndexed { i, group ->
+                            Tab(selected = tab == i, onClick = { tab = i; onAction(MainAction.SelectGroup(group.id)) }, text = { Text(group.remarks, maxLines = 1, overflow = TextOverflow.Ellipsis) })
                         }
                     }
                 }
@@ -221,33 +174,27 @@ fun ExpressiveMainScreen(
                 ElevatedCard(
                     shape = MaterialTheme.shapes.extraLarge,
                     colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
-                    Row(Modifier.padding(18.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.padding(20.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text(
-                                text = if (isRunning) "Connected" else "Disconnected",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = if (isRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            )
+                            Text(if (running) "Connected" else "Disconnected", style = MaterialTheme.typography.titleLarge)
                             Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = mainViewModel.formatStatus(uiState.status),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Text(state.status.toString(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         FilledTonalButton(onClick = { onAction(MainAction.TestCurrentServer) }) { Text("Test") }
                     }
                 }
 
                 if (servers.isEmpty()) {
-                    ExpressiveEmptyState(onImport = { onAction(MainAction.ImportClipboard) })
+                    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                        FilledTonalButton(onClick = { onAction(MainAction.ImportClipboard) }) { Text("Import from clipboard") }
+                    }
                 } else {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp, bottom = 96.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxSize(),
                     ) {
                         items(servers, key = { it.guid }) { server ->
                             ExpressiveServerCard(
@@ -267,21 +214,6 @@ fun ExpressiveMainScreen(
 }
 
 @Composable
-private fun ExpressiveEmptyState(onImport: () -> Unit) {
-    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        ElevatedCard(shape = MaterialTheme.shapes.extraLarge, modifier = Modifier.fillMaxWidth()) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(28.dp)) {
-                Text("No servers", style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(8.dp))
-                Text("Import a server or subscription to get started.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(18.dp))
-                FilledTonalButton(onClick = onImport) { Text("Import from clipboard") }
-            }
-        }
-    }
-}
-
-@Composable
 private fun ExpressiveServerCard(
     server: ServersCache,
     selected: Boolean,
@@ -290,40 +222,25 @@ private fun ExpressiveServerCard(
     onShare: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val container by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
-        label = "server-card",
-    )
-    val onContainer = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-    val secondary = if (selected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f) else MaterialTheme.colorScheme.onSurfaceVariant
-
+    val container by animateColorAsState(if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer, label = "server-card")
+    val primaryText = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+    val secondaryText = if (selected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f) else MaterialTheme.colorScheme.onSurfaceVariant
     ElevatedCard(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.elevatedCardColors(containerColor = container),
     ) {
         Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(46.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = if (selected) 0.22f else 0.12f)),
-                contentAlignment = Alignment.Center,
-            ) {
+            Box(Modifier.size(46.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = if (selected) .22f else .12f)), contentAlignment = Alignment.Center) {
                 Text(server.profile.remarks.take(1).uppercase(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(server.profile.remarks, style = MaterialTheme.typography.titleMedium, color = onContainer, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(server.profile.remarks, style = MaterialTheme.typography.titleMedium, color = primaryText, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
-                Text(server.profile.description.ifBlank { server.profile.configType.name }, style = MaterialTheme.typography.bodyMedium, color = secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(7.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(server.profile.configType.name, style = MaterialTheme.typography.labelMedium, color = secondary)
-                    Spacer(Modifier.width(10.dp))
-                    val ping = server.testDelayMillis
-                    when {
-                        ping >= 0L -> Text("${ping} ms", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                        ping < 0L -> Text("Unavailable", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                Text(server.profile.description?.ifBlank { server.profile.configType.name } ?: server.profile.configType.name, style = MaterialTheme.typography.bodyMedium, color = secondaryText, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(6.dp))
+                Text(server.profile.configType.name, style = MaterialTheme.typography.labelMedium, color = secondaryText)
             }
             IconButton(onClick = onEdit) { Icon(painterResource(R.drawable.ic_edit_24dp), contentDescription = "Edit") }
             IconButton(onClick = onShare) { Icon(painterResource(R.drawable.ic_share_24dp), contentDescription = "Share") }
