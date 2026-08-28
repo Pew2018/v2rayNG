@@ -57,14 +57,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : HelperBaseComponentActivity() {
-
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.Factory(application, MainRepository(application as AngApplication))
     }
 
     private var uiStyle by mutableStateOf(
-        MmkvManager.decodeSettingsString(UiPreferences.PREF_UI_STYLE, UiPreferences.STYLE_MATERIAL3)
-            ?: UiPreferences.STYLE_MATERIAL3
+        MmkvManager.decodeSettingsString(com.v2ray.ang.ui.compose.UiPreferences.PREF_UI_STYLE, com.v2ray.ang.ui.compose.UiPreferences.STYLE_MATERIAL3)
+            ?: com.v2ray.ang.ui.compose.UiPreferences.STYLE_MATERIAL3
     )
 
     private val requestVpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -85,7 +84,7 @@ class MainActivity : HelperBaseComponentActivity() {
     private val settingsActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         val restartService = SettingsChangeManager.consumeRestartService()
         val refreshGroups = SettingsChangeManager.consumeSetupGroupTab()
-        val newStyle = MmkvManager.decodeSettingsString(UiPreferences.PREF_UI_STYLE, UiPreferences.STYLE_MATERIAL3) ?: UiPreferences.STYLE_MATERIAL3
+        val newStyle = MmkvManager.decodeSettingsString(com.v2ray.ang.ui.compose.UiPreferences.PREF_UI_STYLE, com.v2ray.ang.ui.compose.UiPreferences.STYLE_MATERIAL3) ?: com.v2ray.ang.ui.compose.UiPreferences.STYLE_MATERIAL3
         uiStyle = newStyle
         com.v2ray.ang.ui.compose.ThemeManager.setUiStyle(newStyle)
         com.v2ray.ang.ui.compose.ThemeManager.refresh()
@@ -102,7 +101,7 @@ class MainActivity : HelperBaseComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        val newStyle = MmkvManager.decodeSettingsString(UiPreferences.PREF_UI_STYLE, UiPreferences.STYLE_MATERIAL3) ?: UiPreferences.STYLE_MATERIAL3
+        val newStyle = MmkvManager.decodeSettingsString(com.v2ray.ang.ui.compose.UiPreferences.PREF_UI_STYLE, com.v2ray.ang.ui.compose.UiPreferences.STYLE_MATERIAL3) ?: com.v2ray.ang.ui.compose.UiPreferences.STYLE_MATERIAL3
         uiStyle = newStyle
         com.v2ray.ang.ui.compose.ThemeManager.refresh()
     }
@@ -110,11 +109,9 @@ class MainActivity : HelperBaseComponentActivity() {
     @Composable
     override fun ScreenContent() {
         BackHandler { moveTaskToBack(false) }
-        if (uiStyle == UiPreferences.STYLE_LEGACY) {
-            // The original Android 8 / Pixel-like UI is retained here.
+        if (uiStyle == com.v2ray.ang.ui.compose.UiPreferences.STYLE_LEGACY) {
             MainScreen(mainViewModel, ::handleMainAction, ::navigateTo)
         } else {
-            // Material 3 Expressive is a separate UI implementation.
             ExpressiveMainScreen(mainViewModel, ::handleMainAction, ::navigateTo)
         }
     }
