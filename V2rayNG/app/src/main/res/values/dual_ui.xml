@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_interface_settings">Interface</string>
+    <string name="summary_interface_settings">Choose the visual system for the main screen.</string>
+    <string name="interface_material3">Material 3</string>
+    <string name="interface_material3_summary">Modern Material 3, dynamic color and rounded components.</string>
+    <string name="interface_legacy">Pixel Android 8</string>
+    <string name="interface_legacy_summary">Classic Android 8-style native views with a compact layout.</string>
+    <string name="interface_dynamic_color">Monet dynamic color</string>
+    <string name="interface_dynamic_color_summary">Use the system wallpaper palette on Android 12+.</string>
+    <string name="interface_custom_color">Custom accent color</string>
+    <string name="interface_custom_color_summary">Enter #RRGGBB or #AARRGGBB. Leave empty to use Monet/fixed color.</string>
+    <string name="interface_apply">Apply</string>
+</resources>
